@@ -194,11 +194,11 @@
         </div>
     </div>
 
-    <!-- SERIAL LINKING MODAL (FOR GOOGLE & PHONE LOGINS) -->
+    <!-- SERIAL LINKING MODAL -->
     <div id="serial-link-modal" class="fixed inset-0 bg-slate-900/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
         <div class="bg-white dark:bg-slate-800 rounded-2xl max-w-md w-full p-6 shadow-2xl border border-slate-200 dark:border-slate-700 text-center">
             <h3 class="text-lg font-bold text-slate-900 dark:text-white mb-2">Verify Student Identity</h3>
-            <p class="text-xs text-slate-500 mb-4">Link your authenticated account to your official class Serial Number.</p>
+            <p class="text-xs text-slate-500 mb-4">Link your account to your official class Serial Number. Each Serial Number can only be linked to ONE account.</p>
             
             <input type="text" id="link-serial-input" oninput="verifyLinkSerialInput()" placeholder="Enter Serial No. (e.g. 26E100A11)" class="w-full px-3 py-2 border rounded-lg text-sm dark:bg-slate-700 dark:border-slate-600 dark:text-white uppercase mb-2">
             <div id="link-serial-msg" class="text-xs mb-4 text-slate-500"></div>
@@ -222,6 +222,13 @@
         firebase.initializeApp(firebaseConfig);
         const auth = firebase.auth();
         let confirmationResultObj = null;
+
+        // --- AUTHORIZED CR SERIAL NUMBERS (EDIT THIS LIST TO GIVE CR PERMISSIONS) ---
+        const CR_SERIAL_NUMBERS = [
+            "26E114B32", // ADITYA NARAYAN NAYAK
+            "26E100A14", // THAMAN JAY
+            "26E113A75"  // ANUSHKA MALL
+        ];
 
         const MASTER_STUDENT_ROSTER = [
             { serialNo: "26E100A11", name: "ALKA" }, { serialNo: "26E100A12", name: "ADRITA" },
@@ -267,6 +274,19 @@
             renderTasks();
             updateStats();
         });
+
+        // HELPER: CHECK IF SERIAL IS ALREADY BOUND TO ANOTHER UID
+        function getBoundUIDForSerial(serial) {
+            for (let i = 0; i < localStorage.length; i++) {
+                const key = localStorage.key(i);
+                if (key.startsWith('classsync_serial_')) {
+                    if (localStorage.getItem(key).toUpperCase() === serial.toUpperCase()) {
+                        return key.replace('classsync_serial_', '');
+                    }
+                }
+            }
+            return null;
+        }
 
         // AUTH LISTENER
         auth.onAuthStateChanged((user) => {
@@ -338,6 +358,12 @@
             const email = document.getElementById('login-email').value.trim();
             const password = document.getElementById('login-password').value;
 
+            const boundUID = getBoundUIDForSerial(serial);
+            if (boundUID && auth.currentUser && auth.currentUser.uid !== boundUID) {
+                alert("This Serial Number is already bound to another registered account.");
+                return;
+            }
+
             const match = MASTER_STUDENT_ROSTER.find(s => s.serialNo.toUpperCase() === serial);
             if (!match) return alert("Invalid Serial Number.");
 
@@ -366,8 +392,14 @@
 
             const match = MASTER_STUDENT_ROSTER.find(s => s.serialNo.toUpperCase() === inputVal);
             if (match) {
-                msgEl.className = "text-[11px] mt-1 font-semibold text-emerald-600 dark:text-emerald-400";
-                msgEl.innerText = "✓ Serial Verified: " + match.name;
+                const boundUID = getBoundUIDForSerial(inputVal);
+                if (boundUID) {
+                    msgEl.className = "text-[11px] mt-1 font-semibold text-amber-600 dark:text-amber-400";
+                    msgEl.innerText = "⚠️ Serial already bound to an account. Sign in with original account.";
+                } else {
+                    msgEl.className = "text-[11px] mt-1 font-semibold text-emerald-600 dark:text-emerald-400";
+                    msgEl.innerText = "✓ Serial Verified: " + match.name;
+                }
                 submitBtn.disabled = false;
                 submitBtn.className = "w-full bg-brand-600 hover:bg-brand-700 text-white font-semibold py-2.5 rounded-lg text-sm transition cursor-pointer";
             } else {
@@ -389,10 +421,18 @@
             const match = MASTER_STUDENT_ROSTER.find(s => s.serialNo.toUpperCase() === inputVal);
 
             if (match) {
-                msgEl.className = "text-xs mb-4 font-semibold text-emerald-600";
-                msgEl.innerText = "✓ Verified: " + match.name;
-                btn.disabled = false;
-                btn.className = "w-full bg-brand-600 hover:bg-brand-700 text-white font-semibold py-2.5 rounded-lg text-sm transition cursor-pointer";
+                const boundUID = getBoundUIDForSerial(inputVal);
+                if (boundUID && pendingUser && pendingUser.uid !== boundUID) {
+                    msgEl.className = "text-xs mb-4 font-semibold text-rose-500";
+                    msgEl.innerText = "✕ This Serial No. is already bound to another account.";
+                    btn.disabled = true;
+                    btn.className = "w-full bg-slate-300 text-slate-500 font-semibold py-2.5 rounded-lg text-sm transition cursor-not-allowed";
+                } else {
+                    msgEl.className = "text-xs mb-4 font-semibold text-emerald-600";
+                    msgEl.innerText = "✓ Verified: " + match.name;
+                    btn.disabled = false;
+                    btn.className = "w-full bg-brand-600 hover:bg-brand-700 text-white font-semibold py-2.5 rounded-lg text-sm transition cursor-pointer";
+                }
             } else {
                 msgEl.className = "text-xs mb-4 font-semibold text-rose-500";
                 msgEl.innerText = "✕ Invalid Serial Number";
@@ -411,6 +451,35 @@
                 closeSerialLinkModal();
                 closeAuthModal();
             }
+        }
+
+        // CONTROL CR MODE ACCESS
+        function toggleCRMode() {
+            if (!currentUser) {
+                alert("Please sign in first to access CR Mode.");
+                openAuthModal();
+                return;
+            }
+
+            const isAuthorizedCR = CR_SERIAL_NUMBERS.map(s => s.toUpperCase()).includes(currentUser.serialNo.toUpperCase());
+
+            if (!isAuthorizedCR) {
+                alert(`Access Denied: Serial No. #${currentUser.serialNo} (${currentUser.name}) is not authorized to toggle CR Mode.`);
+                return;
+            }
+
+            isCRMode = !isCRMode;
+            const btnText = document.getElementById('cr-mode-text');
+            if (isCRMode) {
+                btnText.innerText = "CR Mode (Active)";
+                document.getElementById('btn-add-task').classList.remove('hidden');
+                document.getElementById('btn-add-notice').classList.remove('hidden');
+            } else {
+                btnText.innerText = "CR Mode";
+                document.getElementById('btn-add-task').classList.add('hidden');
+                document.getElementById('btn-add-notice').classList.add('hidden');
+            }
+            renderTasks();
         }
 
         function switchAuthTab(tab) {
@@ -440,21 +509,6 @@
                 document.getElementById('user-serial-badge').innerText = "#" + currentUser.serialNo;
                 document.getElementById('user-avatar').innerText = currentUser.name.charAt(0);
             }
-        }
-
-        function toggleCRMode() {
-            isCRMode = !isCRMode;
-            const btnText = document.getElementById('cr-mode-text');
-            if (isCRMode) {
-                btnText.innerText = "CR Mode (Active)";
-                document.getElementById('btn-add-task').classList.remove('hidden');
-                document.getElementById('btn-add-notice').classList.remove('hidden');
-            } else {
-                btnText.innerText = "CR Mode";
-                document.getElementById('btn-add-task').classList.add('hidden');
-                document.getElementById('btn-add-notice').classList.add('hidden');
-            }
-            renderTasks();
         }
 
         function renderRosterDisplay(list) {
