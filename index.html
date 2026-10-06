@@ -1,0 +1,412 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ClassSync - Verified Student Dashboard</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        brand: { 50: '#f0f9ff', 100: '#e0f2fe', 500: '#0284c7', 600: '#0369a1', 700: '#075985' }
+                    }
+                }
+            }
+        }
+    </script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <!-- Firebase Compatibility SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
+</head>
+<body class="bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-slate-100 min-h-screen flex flex-col font-sans transition-colors duration-200">
+
+    <!-- HEADER -->
+    <header class="bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 sticky top-0 z-30 shadow-sm">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+            <div class="flex items-center space-x-3">
+                <div class="bg-brand-600 text-white p-2 rounded-xl shadow-md">
+                    <i class="fa-solid fa-graduation-cap text-xl"></i>
+                </div>
+                <div>
+                    <h1 class="font-bold text-lg leading-tight text-slate-900 dark:text-white">ClassSync</h1>
+                    <p class="text-xs text-slate-500 dark:text-slate-400">Class Academic Tracker</p>
+                </div>
+            </div>
+
+            <div class="flex items-center space-x-3">
+                <button id="theme-toggle" class="p-2 rounded-lg text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-700 transition">
+                    <i id="theme-icon" class="fa-solid fa-moon"></i>
+                </button>
+
+                <div id="auth-status-container">
+                    <button id="btn-open-auth" onclick="openAuthModal()" class="bg-brand-600 hover:bg-brand-700 text-white text-sm font-medium px-4 py-2 rounded-lg shadow-sm transition">
+                        <i class="fa-solid fa-right-to-bracket mr-2"></i>Sign In / Register
+                    </button>
+                    <div id="user-logged-in-pill" class="hidden flex items-center space-x-2 bg-slate-100 dark:bg-slate-700/60 p-1.5 pr-3 rounded-full border border-slate-200 dark:border-slate-600">
+                        <div id="user-avatar" class="w-8 h-8 rounded-full bg-brand-600 text-white flex items-center justify-center text-xs font-bold uppercase">?</div>
+                        <div class="text-left leading-tight hidden sm:block">
+                            <div id="user-display-name" class="text-xs font-bold text-slate-800 dark:text-slate-100">Student</div>
+                            <div id="user-serial-badge" class="text-[10px] text-slate-500 dark:text-slate-400">#No Serial</div>
+                        </div>
+                        <button onclick="handleSignOut()" class="ml-2 text-slate-400 hover:text-red-500 text-xs p-1" title="Sign Out">
+                            <i class="fa-solid fa-right-from-bracket"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <button id="btn-cr-mode" onclick="toggleCRMode()" class="px-3 py-1.5 rounded-lg text-xs font-semibold border border-amber-300 bg-amber-50 text-amber-800 dark:bg-amber-950/40 dark:text-amber-300 dark:border-amber-700/50 hover:bg-amber-100 transition flex items-center gap-1.5">
+                    <i class="fa-solid fa-crown text-amber-500"></i>
+                    <span id="cr-mode-text">CR Mode</span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- MAIN DASHBOARD -->
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 flex-grow w-full">
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+            <div class="bg-white dark:bg-slate-800 p-4 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm">
+                <div class="text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">Total Tasks</div>
+                <div id="stat-total" class="text-2xl font-bold text-slate-800 dark:text-slate-100 mt-1">0</div>
+            </div>
+            <div class="bg-white dark:bg-slate-800 p-4 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm">
+                <div class="text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">Due Soon (&lt; 3 days)</div>
+                <div id="stat-due-soon" class="text-2xl font-bold text-amber-600 dark:text-amber-400 mt-1">0</div>
+            </div>
+            <div class="bg-white dark:bg-slate-800 p-4 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm">
+                <div class="text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">My Progress</div>
+                <div id="stat-progress" class="text-2xl font-bold text-emerald-600 dark:text-emerald-400 mt-1">0%</div>
+            </div>
+            <div class="bg-white dark:bg-slate-800 p-4 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm">
+                <div class="text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">Verified Roster</div>
+                <div id="stat-roster-count" class="text-2xl font-bold text-brand-600 dark:text-brand-400 mt-1">56</div>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div class="lg:col-span-2 space-y-4">
+                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 bg-white dark:bg-slate-800 p-4 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm">
+                    <h2 class="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                        <i class="fa-solid fa-list-check text-brand-600"></i> Assignments & Quizzes
+                    </h2>
+                    <div class="flex items-center gap-2 w-full sm:w-auto">
+                        <button id="btn-add-task" onclick="openAddTaskModal()" class="hidden bg-brand-600 hover:bg-brand-700 text-white text-xs font-semibold px-3 py-2 rounded-lg transition flex items-center gap-1.5">
+                            <i class="fa-solid fa-plus"></i> Add Item
+                        </button>
+                    </div>
+                </div>
+
+                <div id="task-list" class="space-y-3"></div>
+            </div>
+
+            <div class="space-y-6">
+                <div class="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-4 shadow-sm">
+                    <div class="flex justify-between items-center mb-3">
+                        <h3 class="font-bold text-slate-900 dark:text-white text-md flex items-center gap-2">
+                            <i class="fa-solid fa-bullhorn text-amber-500"></i> Class Notices
+                        </h3>
+                        <button id="btn-add-notice" onclick="openAddNoticeModal()" class="hidden text-xs text-brand-600 hover:underline font-semibold">
+                            + New Notice
+                        </button>
+                    </div>
+                    <div id="notice-list" class="space-y-3 max-h-80 overflow-y-auto"></div>
+                </div>
+
+                <div class="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-4 shadow-sm">
+                    <div class="flex justify-between items-center mb-3">
+                        <h3 class="font-bold text-slate-900 dark:text-white text-md flex items-center gap-2">
+                            <i class="fa-solid fa-users text-brand-600"></i> Class Roster (56)
+                        </h3>
+                    </div>
+                    <div class="relative mb-3">
+                        <input type="text" id="roster-search" oninput="filterRosterDisplay()" placeholder="Search name or serial no..." class="w-full text-xs px-3 py-2 border rounded-lg dark:bg-slate-700 dark:border-slate-600 dark:text-white">
+                    </div>
+                    <div id="roster-list-preview" class="space-y-2 max-h-64 overflow-y-auto text-xs divide-y divide-slate-100 dark:divide-slate-700"></div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- AUTHENTICATION MODAL -->
+    <div id="auth-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white dark:bg-slate-800 rounded-2xl max-w-md w-full p-6 shadow-2xl border border-slate-200 dark:border-slate-700">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-lg font-bold text-slate-900 dark:text-white">Student Sign In</h3>
+                <button onclick="closeAuthModal()" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark text-lg"></i></button>
+            </div>
+
+            <div class="flex border-b border-slate-200 dark:border-slate-700 mb-4 text-sm font-semibold">
+                <button id="tab-login" onclick="switchAuthTab('login')" class="flex-1 py-2 text-brand-600 border-b-2 border-brand-600">Sign In</button>
+                <button id="tab-signup" onclick="switchAuthTab('signup')" class="flex-1 py-2 text-slate-400 border-b-2 border-transparent">Register</button>
+            </div>
+
+            <!-- LOGIN -->
+            <form id="form-login" onsubmit="handleLoginSubmit(event)" class="space-y-3">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1">Serial Number / Roll No.</label>
+                    <input type="text" id="login-serial" required placeholder="e.g. 26E100A11" class="w-full px-3 py-2 border rounded-lg text-sm dark:bg-slate-700 dark:border-slate-600 dark:text-white">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1">Password</label>
+                    <input type="password" id="login-password" required placeholder="••••••••" class="w-full px-3 py-2 border rounded-lg text-sm dark:bg-slate-700 dark:border-slate-600 dark:text-white">
+                </div>
+                <button type="submit" class="w-full bg-brand-600 hover:bg-brand-700 text-white font-semibold py-2.5 rounded-lg text-sm transition">Sign In</button>
+            </form>
+
+            <!-- REGISTER -->
+            <form id="form-signup" onsubmit="handleSignupSubmit(event)" class="space-y-3 hidden">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1">Serial Number (from Roster)</label>
+                    <input type="text" id="signup-serial" oninput="verifySerialInput()" required placeholder="e.g. 26E100A11" class="w-full px-3 py-2 border rounded-lg text-sm dark:bg-slate-700 dark:border-slate-600 dark:text-white uppercase">
+                    <div id="serial-verify-msg" class="text-[11px] mt-1 font-medium text-slate-500">Enter your serial number to auto-verify your name.</div>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1">Full Name (Auto-verified)</label>
+                    <input type="text" id="signup-name" readonly placeholder="Verified Name" class="w-full px-3 py-2 border rounded-lg text-sm bg-slate-100 dark:bg-slate-900/50 dark:border-slate-700 dark:text-slate-300 cursor-not-allowed">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1">Set Password</label>
+                    <input type="password" id="signup-password" required minlength="6" placeholder="••••••••" class="w-full px-3 py-2 border rounded-lg text-sm dark:bg-slate-700 dark:border-slate-600 dark:text-white">
+                </div>
+                <button type="submit" id="btn-signup-submit" disabled class="w-full bg-slate-300 text-slate-500 font-semibold py-2.5 rounded-lg text-sm transition cursor-not-allowed">Complete Registration</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- JAVASCRIPT LOGIC -->
+    <script>
+        // FIREBASE CREDENTIALS (FROM YOUR SCREENSHOT)
+        const firebaseConfig = {
+            apiKey: "AIzaSyAdwRD23SXtRr3b4cAADMM2lySwn4el_Hk",
+            authDomain: "class-synced.firebaseapp.com",
+            projectId: "class-synced",
+            storageBucket: "class-synced.firebasestorage.app",
+            messagingSenderId: "836347009251",
+            appId: "1:836347009251:web:c472d5703a5ce0a718dd6",
+            measurementId: "G-G88VVWJP5"
+        };
+
+        // INITIALIZE FIREBASE & AUTH
+        firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+
+        // 56-STUDENT MASTER ROSTER
+        const MASTER_STUDENT_ROSTER = [
+            { serialNo: "26E100A11", name: "ALKA" }, { serialNo: "26E100A12", name: "ADRITA" },
+            { serialNo: "26E100A22", name: "KOMAL KASTURI DAS" }, { serialNo: "26E100A24", name: "ARYAN JHA" },
+            { serialNo: "26E101A88", name: "ADITI ANAND" }, { serialNo: "26E102A32", name: "SMRUTI REKHA BARIK" },
+            { serialNo: "26E102A92", name: "DISHA BEHERA" }, { serialNo: "26E102B79", name: "ARYAN BISWAL" },
+            { serialNo: "26E103A01", name: "RACHANA CHAKI" }, { serialNo: "26E104A03", name: "ROSHAN DALABEHERA" },
+            { serialNo: "26E104B39", name: "SUBHASMITA DASH" }, { serialNo: "26E104B56", name: "SWASTIK SWARAJ DASH" },
+            { serialNo: "26E104C08", name: "DEBAJYOTI DHAOYA" }, { serialNo: "26E107A27", name: "ARITRA GHOSH" },
+            { serialNo: "26E107A75", name: "ANKIT GUPTA" }, { serialNo: "26E100A14", name: "THAMAN JAY" },
+            { serialNo: "26E110A33", name: "AVIJEET JENA" }, { serialNo: "26E110A41", name: "JEEVAN JYOTI JENA" },
+            { serialNo: "26E111A33", name: "MAYANK KASHYAP" }, { serialNo: "26E111A86", name: "ABHISHEK KUIRY" },
+            { serialNo: "26E111A94", name: "GOURAB KUMAR" }, { serialNo: "26E111B17", name: "REETESH KUMAR" },
+            { serialNo: "26E111838", name: "NITIN KUMAR" }, { serialNo: "26E111C12", name: "ADHYA KUMARI" },
+            { serialNo: "26E111C36", name: "SONAL KUMARI" }, { serialNo: "26E111C47", name: "NANDINI KUMARI" },
+            { serialNo: "26E111C59", name: "PANKAJ KUMAR KUSHWAHA" }, { serialNo: "26E113A75", name: "ANUSHKA MALL" },
+            { serialNo: "26E113B52", name: "SAMBIT MISHRA" }, { serialNo: "26E113B65", name: "SARMISTA MISHRA" },
+            { serialNo: "26E114A20", name: "ASHUTOSH NANDA" }, { serialNo: "26E114B10", name: "VEENITH KRISHNA NAYAK" },
+            { serialNo: "26E114B32", name: "ADITYA NARAYAN NAYAK" }, { serialNo: "26E115A07", name: "MOHAMMED OWAIS" },
+            { serialNo: "26E116A53", name: "PRIYADARSANI PANDA" }, { serialNo: "26E116B02", name: "SHRUTI PANDEY" },
+            { serialNo: "26E116B27", name: "AMULYA PANKAJ" }, { serialNo: "26E116B48", name: "SUBHA SANDHYA PARIDA" },
+            { serialNo: "26E116B54", name: "PRATIK KUMAR PARIDA" }, { serialNo: "26E116B71", name: "SUKIRTI PATHAK" },
+            { serialNo: "26E118A33", name: "SHAURYA RAJ" }, { serialNo: "26E118A36", name: "SAHIL RAJ" },
+            { serialNo: "26E118A72", name: "AASTHA RANJAN" }, { serialNo: "26E118B74", name: "SHREEJITA ROY" },
+            { serialNo: "26E118C03", name: "ABHIPSA ROY" }, { serialNo: "26E119A07", name: "PIYUSH SAGAR" },
+            { serialNo: "26E119A17", name: "RITISH SAHA" }, { serialNo: "26E119C06", name: "ANSHU RAJ SAHU" },
+            { serialNo: "26E119C15", name: "BIRENDRA SAHU" }, { serialNo: "26E119D14", name: "SUSHIL KUMAR SAW" },
+            { serialNo: "26E119D52", name: "LUV KUMAR SHARMA" }, { serialNo: "26E119E17", name: "DEV PRATHAM SINGH" },
+            { serialNo: "26E119E81", name: "AYUSH SINHA" }, { serialNo: "26E119G20", name: "SITANSU KUMAR SAHOO" },
+            { serialNo: "26E120A12", name: "PREETAM THOTA" }, { serialNo: "26E125A03", name: "HIMANSHU SHEKHAR YADAV" }
+        ];
+
+        let currentUser = null;
+        let isCRMode = false;
+        let tasks = [
+            { id: "1", title: "Data Structures Assignment 2", subject: "CS201", type: "Assignment", dueDate: "2026-10-12", priority: "High" },
+            { id: "2", title: "Mid-Term Software Engineering Quiz", subject: "SE302", type: "Quiz", dueDate: "2026-10-15", priority: "Medium" }
+        ];
+
+        document.addEventListener('DOMContentLoaded', () => {
+            renderRosterDisplay(MASTER_STUDENT_ROSTER);
+            renderTasks();
+            updateStats();
+        });
+
+        // PERSISTENT AUTH LISTENER
+        auth.onAuthStateChanged((user) => {
+            if (user) {
+                const serial = user.email.split('@')[0].toUpperCase();
+                const match = MASTER_STUDENT_ROSTER.find(s => s.serialNo.toUpperCase() === serial);
+                currentUser = match || { serialNo: serial, name: user.displayName || "Student" };
+                updateUserUI();
+            } else {
+                currentUser = null;
+                document.getElementById('btn-open-auth').classList.remove('hidden');
+                document.getElementById('user-logged-in-pill').classList.add('hidden');
+            }
+        });
+
+        function verifySerialInput() {
+            const inputVal = document.getElementById('signup-serial').value.trim().toUpperCase();
+            const msgEl = document.getElementById('serial-verify-msg');
+            const nameEl = document.getElementById('signup-name');
+            const submitBtn = document.getElementById('btn-signup-submit');
+
+            const match = MASTER_STUDENT_ROSTER.find(s => s.serialNo.toUpperCase() === inputVal);
+            if (match) {
+                nameEl.value = match.name;
+                msgEl.className = "text-[11px] mt-1 font-semibold text-emerald-600 dark:text-emerald-400";
+                msgEl.innerText = "✓ Serial Verified: " + match.name;
+                submitBtn.disabled = false;
+                submitBtn.className = "w-full bg-brand-600 hover:bg-brand-700 text-white font-semibold py-2.5 rounded-lg text-sm transition cursor-pointer";
+            } else {
+                nameEl.value = "";
+                msgEl.className = "text-[11px] mt-1 font-semibold text-rose-500";
+                msgEl.innerText = "✕ Serial No. not found in official class roster";
+                submitBtn.disabled = true;
+                submitBtn.className = "w-full bg-slate-300 text-slate-500 font-semibold py-2.5 rounded-lg text-sm transition cursor-not-allowed";
+            }
+        }
+
+        function switchAuthTab(tab) {
+            if (tab === 'login') {
+                document.getElementById('form-login').classList.remove('hidden');
+                document.getElementById('form-signup').classList.add('hidden');
+                document.getElementById('tab-login').className = "flex-1 py-2 text-brand-600 border-b-2 border-brand-600";
+                document.getElementById('tab-signup').className = "flex-1 py-2 text-slate-400 border-b-2 border-transparent";
+            } else {
+                document.getElementById('form-login').classList.add('hidden');
+                document.getElementById('form-signup').classList.remove('hidden');
+                document.getElementById('tab-login').className = "flex-1 py-2 text-slate-400 border-b-2 border-transparent";
+                document.getElementById('tab-signup').className = "flex-1 py-2 text-brand-600 border-b-2 border-brand-600";
+            }
+        }
+
+        function openAuthModal() { document.getElementById('auth-modal').classList.remove('hidden'); }
+        function closeAuthModal() { document.getElementById('auth-modal').classList.add('hidden'); }
+
+        async function handleSignupSubmit(e) {
+            e.preventDefault();
+            const serial = document.getElementById('signup-serial').value.trim().toUpperCase();
+            const password = document.getElementById('signup-password').value;
+            const match = MASTER_STUDENT_ROSTER.find(s => s.serialNo.toUpperCase() === serial);
+
+            if (!match) {
+                alert("Serial Number not found in class roster.");
+                return;
+            }
+
+            try {
+                const dummyEmail = `${serial.toLowerCase()}@classsync.local`;
+                const userCredential = await auth.createUserWithEmailAndPassword(dummyEmail, password);
+                await userCredential.user.updateProfile({ displayName: match.name });
+                
+                currentUser = match;
+                updateUserUI();
+                closeAuthModal();
+                alert(`Account registered successfully for ${match.name}!`);
+            } catch (error) {
+                if (error.code === 'auth/email-already-in-use') {
+                    alert("An account with this Serial Number already exists. Please Sign In.");
+                } else {
+                    alert("Registration failed: " + error.message);
+                }
+            }
+        }
+
+        async function handleLoginSubmit(e) {
+            e.preventDefault();
+            const serial = document.getElementById('login-serial').value.trim().toUpperCase();
+            const password = document.getElementById('login-password').value;
+            const dummyEmail = `${serial.toLowerCase()}@classsync.local`;
+
+            try {
+                const userCredential = await auth.signInWithEmailAndPassword(dummyEmail, password);
+                const match = MASTER_STUDENT_ROSTER.find(s => s.serialNo.toUpperCase() === serial);
+                currentUser = match || { serialNo: serial, name: userCredential.user.displayName };
+                updateUserUI();
+                closeAuthModal();
+            } catch (error) {
+                alert("Login failed: Incorrect Serial Number or Password.");
+            }
+        }
+
+        function handleSignOut() {
+            auth.signOut();
+        }
+
+        function updateUserUI() {
+            if (currentUser) {
+                document.getElementById('btn-open-auth').classList.add('hidden');
+                document.getElementById('user-logged-in-pill').classList.remove('hidden');
+                document.getElementById('user-display-name').innerText = currentUser.name;
+                document.getElementById('user-serial-badge').innerText = "#" + currentUser.serialNo;
+                document.getElementById('user-avatar').innerText = currentUser.name.charAt(0);
+            }
+        }
+
+        function toggleCRMode() {
+            isCRMode = !isCRMode;
+            const btnText = document.getElementById('cr-mode-text');
+            if (isCRMode) {
+                btnText.innerText = "CR Mode (Active)";
+                document.getElementById('btn-add-task').classList.remove('hidden');
+                document.getElementById('btn-add-notice').classList.remove('hidden');
+            } else {
+                btnText.innerText = "CR Mode";
+                document.getElementById('btn-add-task').classList.add('hidden');
+                document.getElementById('btn-add-notice').classList.add('hidden');
+            }
+            renderTasks();
+        }
+
+        function renderRosterDisplay(list) {
+            const container = document.getElementById('roster-list-preview');
+            container.innerHTML = list.map(s => `
+                <div class="py-1.5 flex justify-between items-center">
+                    <span class="font-medium text-slate-800 dark:text-slate-200">${s.name}</span>
+                    <span class="font-mono text-[10px] text-slate-500 bg-slate-100 dark:bg-slate-700 px-1.5 py-0.5 rounded">${s.serialNo}</span>
+                </div>
+            `).join('');
+        }
+
+        function filterRosterDisplay() {
+            const query = document.getElementById('roster-search').value.toLowerCase();
+            const filtered = MASTER_STUDENT_ROSTER.filter(s => 
+                s.name.toLowerCase().includes(query) || s.serialNo.toLowerCase().includes(query)
+            );
+            renderRosterDisplay(filtered);
+        }
+
+        function renderTasks() {
+            const container = document.getElementById('task-list');
+            container.innerHTML = tasks.map(t => `
+                <div class="bg-white dark:bg-slate-800 p-4 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm flex items-center justify-between">
+                    <div>
+                        <div class="flex items-center space-x-2 mb-1">
+                            <span class="text-[10px] font-bold uppercase px-2 py-0.5 rounded bg-brand-100 text-brand-700 dark:bg-brand-900/40 dark:text-brand-300">${t.type}</span>
+                            <span class="text-xs font-semibold text-slate-500">${t.subject}</span>
+                        </div>
+                        <h4 class="font-bold text-slate-800 dark:text-slate-100 text-sm">${t.title}</h4>
+                        <div class="text-xs text-slate-500 mt-1">Due: ${t.dueDate}</div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function updateStats() {
+            document.getElementById('stat-total').innerText = tasks.length;
+            document.getElementById('stat-roster-count').innerText = MASTER_STUDENT_ROSTER.length;
+        }
+    </script>
+</body>
+</html>
