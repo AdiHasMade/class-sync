@@ -40,6 +40,11 @@
             </div>
 
             <div class="flex items-center space-x-3">
+                <!-- DARK MODE TOGGLE BUTTON -->
+                <button onclick="toggleDarkMode()" class="p-2 rounded-lg text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700 transition" title="Toggle Dark/Light Mode">
+                    <i id="theme-icon" class="fa-solid fa-moon text-lg"></i>
+                </button>
+
                 <div id="auth-status-container">
                     <button id="btn-open-auth" onclick="openAuthModal()" class="bg-brand-600 hover:bg-brand-700 text-white text-sm font-medium px-4 py-2 rounded-lg shadow-sm transition">
                         <i class="fa-solid fa-right-to-bracket mr-2"></i>Sign In / Register
@@ -129,7 +134,7 @@
         </div>
     </main>
 
-    <!-- ADD ITEM MODAL -->
+    <!-- ADD ITEM MODAL WITH SUBJECT DROPDOWN -->
     <div id="add-task-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
         <div class="bg-white dark:bg-slate-800 rounded-2xl max-w-md w-full p-6 shadow-2xl border border-slate-200 dark:border-slate-700">
             <div class="flex justify-between items-center mb-4">
@@ -141,11 +146,21 @@
                     <label class="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1">Title</label>
                     <input type="text" id="task-title" required placeholder="e.g. Lab 3 Submission" class="w-full px-3 py-2 border rounded-lg text-sm dark:bg-slate-700 dark:border-slate-600 dark:text-white">
                 </div>
-                <div class="grid grid-cols-2 gap-2">
+                <div class="grid grid-cols-1 gap-2">
                     <div>
-                        <label class="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1">Subject Code</label>
-                        <input type="text" id="task-subject" required placeholder="CS201" class="w-full px-3 py-2 border rounded-lg text-sm dark:bg-slate-700 dark:border-slate-600 dark:text-white">
+                        <label class="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1">Subject</label>
+                        <select id="task-subject" required class="w-full px-3 py-2 border rounded-lg text-sm dark:bg-slate-700 dark:border-slate-600 dark:text-white">
+                            <option value="HSS 1972 - UNIVERSAL HUMAN VALUES">HSS 1972 - UNIVERSAL HUMAN VALUES</option>
+                            <option value="CSE 1001 - INTRODUCTION TO COMPUTER PROGRAMMING">CSE 1001 - INTRODUCTION TO COMPUTER PROGRAMMING</option>
+                            <option value="PHY 1001 - UNIVERSITY PHYSICS: MECHANICS">PHY 1001 - UNIVERSITY PHYSICS: MECHANICS</option>
+                            <option value="GET 1001 - INTRODUCTORY PROBLEM SOLVING">GET 1001 - INTRODUCTORY PROBLEM SOLVING</option>
+                            <option value="MTH 1101 - CALCULUS A">MTH 1101 - CALCULUS A</option>
+                            <option value="CSE 1002 - DISCRETE MATHEMATICS">CSE 1002 - DISCRETE MATHEMATICS</option>
+                            <option value="GEN 1140 - DIGITAL FABRICATION TECHNIQUES">GEN 1140 - DIGITAL FABRICATION TECHNIQUES</option>
+                        </select>
                     </div>
+                </div>
+                <div class="grid grid-cols-2 gap-2">
                     <div>
                         <label class="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1">Type</label>
                         <select id="task-type" class="w-full px-3 py-2 border rounded-lg text-sm dark:bg-slate-700 dark:border-slate-600 dark:text-white">
@@ -155,10 +170,10 @@
                             <option value="Project">Project</option>
                         </select>
                     </div>
-                </div>
-                <div>
-                    <label class="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1">Due Date</label>
-                    <input type="date" id="task-date" required class="w-full px-3 py-2 border rounded-lg text-sm dark:bg-slate-700 dark:border-slate-600 dark:text-white">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1">Due Date</label>
+                        <input type="date" id="task-date" required class="w-full px-3 py-2 border rounded-lg text-sm dark:bg-slate-700 dark:border-slate-600 dark:text-white">
+                    </div>
                 </div>
                 <button type="submit" class="w-full bg-brand-600 hover:bg-brand-700 text-white font-semibold py-2.5 rounded-lg text-sm transition mt-2">Publish Task</button>
             </form>
@@ -239,7 +254,7 @@
         </div>
     </div>
 
-    <!-- SERIAL LINKING MODAL -->
+    <!-- SERIAL LINKING MODAL FOR GOOGLE & PHONE LOGIN -->
     <div id="serial-link-modal" class="fixed inset-0 bg-slate-900/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
         <div class="bg-white dark:bg-slate-800 rounded-2xl max-w-md w-full p-6 shadow-2xl border border-slate-200 dark:border-slate-700 text-center">
             <h3 class="text-lg font-bold text-slate-900 dark:text-white mb-2">Verify Student Identity</h3>
@@ -305,8 +320,8 @@
         let isCRMode = false;
         
         let tasks = [
-            { id: "1", title: "Data Structures Assignment 2", subject: "CS201", type: "Assignment", dueDate: "2026-10-12" },
-            { id: "2", title: "Mid-Term Software Engineering Quiz", subject: "SE302", type: "Quiz", dueDate: "2026-10-15" }
+            { id: "1", title: "Data Structures Assignment 2", subject: "CSE 1001 - INTRODUCTION TO COMPUTER PROGRAMMING", type: "Assignment", dueDate: "2026-10-12" },
+            { id: "2", title: "Mid-Term Physics Quiz", subject: "PHY 1001 - UNIVERSITY PHYSICS: MECHANICS", type: "Quiz", dueDate: "2026-10-15" }
         ];
 
         let notices = [
@@ -314,13 +329,34 @@
         ];
 
         document.addEventListener('DOMContentLoaded', () => {
+            initTheme();
             renderRosterDisplay(MASTER_STUDENT_ROSTER);
             renderTasks();
             renderNotices();
             updateStats();
         });
 
-        // MODAL CONTROLLERS FOR ADD ITEM & NOTICE
+        // DARK MODE TOGGLE FIX
+        function initTheme() {
+            const savedTheme = localStorage.getItem('classsync_theme');
+            if (savedTheme === 'dark' || (!savedTheme && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+                document.documentElement.classList.add('dark');
+                document.getElementById('theme-icon').className = "fa-solid fa-sun text-amber-400 text-lg";
+            } else {
+                document.documentElement.classList.remove('dark');
+                document.getElementById('theme-icon').className = "fa-solid fa-moon text-lg";
+            }
+        }
+
+        function toggleDarkMode() {
+            const isDark = document.documentElement.classList.toggle('dark');
+            localStorage.setItem('classsync_theme', isDark ? 'dark' : 'light');
+            document.getElementById('theme-icon').className = isDark 
+                ? "fa-solid fa-sun text-amber-400 text-lg" 
+                : "fa-solid fa-moon text-lg";
+        }
+
+        // MODAL CONTROLLERS
         function openAddTaskModal() { document.getElementById('add-task-modal').classList.remove('hidden'); }
         function closeAddTaskModal() { document.getElementById('add-task-modal').classList.add('hidden'); }
         function openAddNoticeModal() { document.getElementById('add-notice-modal').classList.remove('hidden'); }
@@ -350,11 +386,13 @@
             e.target.reset();
         }
 
+        // GLOBAL SERIAL BOUND CHECKER (RESTRICTION FOR SINGLE ACCOUNT)
         function getBoundUIDForSerial(serial) {
+            const upperSerial = serial.toUpperCase();
             for (let i = 0; i < localStorage.length; i++) {
                 const key = localStorage.key(i);
                 if (key.startsWith('classsync_serial_')) {
-                    if (localStorage.getItem(key).toUpperCase() === serial.toUpperCase()) {
+                    if (localStorage.getItem(key).toUpperCase() === upperSerial) {
                         return key.replace('classsync_serial_', '');
                     }
                 }
@@ -426,7 +464,7 @@
             const password = document.getElementById('login-password').value;
 
             const boundUID = getBoundUIDForSerial(serial);
-            if (boundUID && auth.currentUser && auth.currentUser.uid !== boundUID) {
+            if (boundUID && (!auth.currentUser || auth.currentUser.uid !== boundUID)) {
                 alert("This Serial Number is already bound to another registered account.");
                 return;
             }
@@ -460,15 +498,17 @@
             const match = MASTER_STUDENT_ROSTER.find(s => s.serialNo.toUpperCase() === inputVal);
             if (match) {
                 const boundUID = getBoundUIDForSerial(inputVal);
-                if (boundUID) {
-                    msgEl.className = "text-[11px] mt-1 font-semibold text-amber-600 dark:text-amber-400";
-                    msgEl.innerText = "⚠️ Serial bound to another account.";
+                if (boundUID && (!auth.currentUser || auth.currentUser.uid !== boundUID)) {
+                    msgEl.className = "text-[11px] mt-1 font-semibold text-rose-500";
+                    msgEl.innerText = "✕ Already linked to another account!";
+                    submitBtn.disabled = true;
+                    submitBtn.className = "w-full bg-slate-300 text-slate-500 font-semibold py-2.5 rounded-lg text-sm transition cursor-not-allowed";
                 } else {
                     msgEl.className = "text-[11px] mt-1 font-semibold text-emerald-600 dark:text-emerald-400";
                     msgEl.innerText = "✓ Serial Verified: " + match.name;
+                    submitBtn.disabled = false;
+                    submitBtn.className = "w-full bg-brand-600 hover:bg-brand-700 text-white font-semibold py-2.5 rounded-lg text-sm transition cursor-pointer";
                 }
-                submitBtn.disabled = false;
-                submitBtn.className = "w-full bg-brand-600 hover:bg-brand-700 text-white font-semibold py-2.5 rounded-lg text-sm transition cursor-pointer";
             } else {
                 msgEl.className = "text-[11px] mt-1 font-semibold text-rose-500";
                 msgEl.innerText = "✕ Serial No. not found in roster";
@@ -490,7 +530,7 @@
                 const boundUID = getBoundUIDForSerial(inputVal);
                 if (boundUID && pendingUser && pendingUser.uid !== boundUID) {
                     msgEl.className = "text-xs mb-4 font-semibold text-rose-500";
-                    msgEl.innerText = "✕ Already bound to another account.";
+                    msgEl.innerText = "✕ Already bound to another registered account.";
                     btn.disabled = true;
                     btn.className = "w-full bg-slate-300 text-slate-500 font-semibold py-2.5 rounded-lg text-sm transition cursor-not-allowed";
                 } else {
@@ -603,10 +643,10 @@
                     <div>
                         <div class="flex items-center space-x-2 mb-1">
                             <span class="text-[10px] font-bold uppercase px-2 py-0.5 rounded bg-brand-100 text-brand-700 dark:bg-brand-900/40 dark:text-brand-300">${t.type}</span>
-                            <span class="text-xs font-semibold text-slate-500">${t.subject}</span>
+                            <span class="text-xs font-semibold text-slate-500 dark:text-slate-400">${t.subject}</span>
                         </div>
                         <h4 class="font-bold text-slate-800 dark:text-slate-100 text-sm">${t.title}</h4>
-                        <div class="text-xs text-slate-500 mt-1">Due: ${t.dueDate}</div>
+                        <div class="text-xs text-slate-500 dark:text-slate-400 mt-1">Due: ${t.dueDate}</div>
                     </div>
                 </div>
             `).join('');
