@@ -26,7 +26,6 @@
 </head>
 <body class="bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-slate-100 min-h-screen flex flex-col font-sans transition-colors duration-200">
 
-    <!-- HEADER -->
     <header class="bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 sticky top-0 z-30 shadow-sm">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
             <div class="flex items-center space-x-3">
@@ -40,7 +39,6 @@
             </div>
 
             <div class="flex items-center space-x-3">
-                <!-- DARK MODE TOGGLE BUTTON -->
                 <button onclick="toggleDarkMode()" class="p-2 rounded-lg text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700 transition" title="Toggle Dark/Light Mode">
                     <i id="theme-icon" class="fa-solid fa-moon text-lg"></i>
                 </button>
@@ -69,7 +67,6 @@
         </div>
     </header>
 
-    <!-- MAIN DASHBOARD -->
     <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 flex-grow w-full">
         <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
             <div class="bg-white dark:bg-slate-800 p-4 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm">
@@ -134,7 +131,6 @@
         </div>
     </main>
 
-    <!-- ADD ITEM MODAL WITH SUBJECT DROPDOWN -->
     <div id="add-task-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
         <div class="bg-white dark:bg-slate-800 rounded-2xl max-w-md w-full p-6 shadow-2xl border border-slate-200 dark:border-slate-700">
             <div class="flex justify-between items-center mb-4">
@@ -180,7 +176,6 @@
         </div>
     </div>
 
-    <!-- ADD NOTICE MODAL -->
     <div id="add-notice-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
         <div class="bg-white dark:bg-slate-800 rounded-2xl max-w-md w-full p-6 shadow-2xl border border-slate-200 dark:border-slate-700">
             <div class="flex justify-between items-center mb-4">
@@ -197,7 +192,6 @@
         </div>
     </div>
 
-    <!-- AUTHENTICATION MODAL -->
     <div id="auth-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
         <div class="bg-white dark:bg-slate-800 rounded-2xl max-w-md w-full p-6 shadow-2xl border border-slate-200 dark:border-slate-700">
             <div class="flex justify-between items-center mb-4">
@@ -254,7 +248,6 @@
         </div>
     </div>
 
-    <!-- SERIAL LINKING MODAL FOR GOOGLE & PHONE LOGIN -->
     <div id="serial-link-modal" class="fixed inset-0 bg-slate-900/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
         <div class="bg-white dark:bg-slate-800 rounded-2xl max-w-md w-full p-6 shadow-2xl border border-slate-200 dark:border-slate-700 text-center">
             <h3 class="text-lg font-bold text-slate-900 dark:text-white mb-2">Verify Student Identity</h3>
@@ -336,7 +329,6 @@
             updateStats();
         });
 
-        // DARK MODE TOGGLE FIX
         function initTheme() {
             const savedTheme = localStorage.getItem('classsync_theme');
             if (savedTheme === 'dark' || (!savedTheme && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
@@ -356,7 +348,6 @@
                 : "fa-solid fa-moon text-lg";
         }
 
-        // MODAL CONTROLLERS
         function openAddTaskModal() { document.getElementById('add-task-modal').classList.remove('hidden'); }
         function closeAddTaskModal() { document.getElementById('add-task-modal').classList.add('hidden'); }
         function openAddNoticeModal() { document.getElementById('add-notice-modal').classList.remove('hidden'); }
@@ -386,7 +377,6 @@
             e.target.reset();
         }
 
-        // GLOBAL SERIAL BOUND CHECKER (RESTRICTION FOR SINGLE ACCOUNT)
         function getBoundUIDForSerial(serial) {
             const upperSerial = serial.toUpperCase();
             for (let i = 0; i < localStorage.length; i++) {
