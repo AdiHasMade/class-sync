@@ -6,7 +6,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     
-    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 640 512'><path fill='%230284c7' d='M320 32c-8.1 0-16.1 2.3-23 6.8L14.7 178.6c-18.3 12-18.3 38.9 0 50.9l282.3 139.8c13.9 9.1 32.1 9.1 46 0l282.3-139.8c18.3-12 18.3-38.9 0-50.9L343 38.8c-6.9-4.5-14.9-6.8-23-6.8zm-192 200v112c0 35.3 86 64 192 64s192-28.7 192-64V232l-169.1 83.7c-14.4 7.1-31.4 7.1-45.8 0L128 232z'/></svg>">
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 640 512'><path fill='%23ffffff' d='M320 32c-8.1 0-16.1 2.3-23 6.8L14.7 178.6c-18.3 12-18.3 38.9 0 50.9l282.3 139.8c13.9 9.1 32.1 9.1 46 0l282.3-139.8c18.3-12 18.3-38.9 0-50.9L343 38.8c-6.9-4.5-14.9-6.8-23-6.8zm-192 200v112c0 35.3 86 64 192 64s192-28.7 192-64V232l-169.1 83.7c-14.4 7.1-31.4 7.1-45.8 0L128 232z'/></svg>">
 
     <title>ClassSync - Verified Student Dashboard</title>
     
@@ -23,29 +23,29 @@
             }
         }
     </script>
-    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 640 512'><path fill='%23ffffff' d='M320 32c-8.1 0-16.1 2.3-23 6.8L14.7 178.6c-18.3 12-18.3 38.9 0 50.9l282.3 139.8c13.9 9.1 32.1 9.1 46 0l282.3-139.8c18.3-12 18.3-38.9 0-50.9L343 38.8c-6.9-4.5-14.9-6.8-23-6.8zm-192 200v112c0 35.3 86 64 192 64s192-28.7 192-64V232l-169.1 83.7c-14.4 7.1-31.4 7.1-45.8 0L128 232z'/></svg>">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
     <!-- Firebase Compatibility SDKs -->
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
 </head>
 <body class="bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-slate-100 min-h-screen flex flex-col font-sans transition-colors duration-200">
-
+    
     <header class="bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 sticky top-0 z-30 shadow-sm">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
             <div class="flex items-center space-x-3">
                 <div class="bg-brand-600 text-white p-2.5 rounded-xl shadow-md flex items-center justify-center">
-                    <i class="fa-solid fa-graduation-cap text-xl"></i>
-                </div>
-                <div>
-        <h1 class="font-bold text-lg leading-tight text-slate-900 dark:text-white">ClassSync</h1>
-        <p class="text-xs text-slate-500 dark:text-slate-400">Class Academic Tracker</p>
-    </div>
-<div class="flex items-center space-x-3">
-                <div class="bg-brand-600 text-white p-2.5 rounded-xl shadow-md flex items-center justify-center">
                     <i class="fa-solid fa-graduation-cap text-xl text-white"></i>
                 </div>
                 <div>
+                    <h1 class="font-bold text-lg leading-tight text-slate-900 dark:text-white">ClassSync</h1>
+                    <p class="text-xs text-slate-500 dark:text-slate-400">Class Academic Tracker</p>
+                </div>
+            </div>
+
+            <div class="flex items-center space-x-3">
+                <button onclick="toggleDarkMode()" class="p-2 rounded-lg text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700 transition" title="Toggle Dark/Light Mode">
+                    <i id="theme-icon" class="fa-solid fa-moon text-lg"></i>
                 </button>
 
                 <div id="auth-status-container">
@@ -136,6 +136,7 @@
         </div>
     </main>
 
+    <!-- ADD ITEM MODAL WITH 7-COURSE DROPDOWN -->
     <div id="add-task-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
         <div class="bg-white dark:bg-slate-800 rounded-2xl max-w-md w-full p-6 shadow-2xl border border-slate-200 dark:border-slate-700">
             <div class="flex justify-between items-center mb-4">
@@ -147,19 +148,17 @@
                     <label class="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1">Title</label>
                     <input type="text" id="task-title" required placeholder="e.g. Lab 3 Submission" class="w-full px-3 py-2 border rounded-lg text-sm dark:bg-slate-700 dark:border-slate-600 dark:text-white">
                 </div>
-                <div class="grid grid-cols-1 gap-2">
-                    <div>
-                        <label class="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1">Subject</label>
-                        <select id="task-subject" required class="w-full px-3 py-2 border rounded-lg text-sm dark:bg-slate-700 dark:border-slate-600 dark:text-white">
-                            <option value="HSS 1972 - UNIVERSAL HUMAN VALUES">HSS 1972 - UNIVERSAL HUMAN VALUES</option>
-                            <option value="CSE 1001 - INTRODUCTION TO COMPUTER PROGRAMMING">CSE 1001 - INTRODUCTION TO COMPUTER PROGRAMMING</option>
-                            <option value="PHY 1001 - UNIVERSITY PHYSICS: MECHANICS">PHY 1001 - UNIVERSITY PHYSICS: MECHANICS</option>
-                            <option value="GET 1001 - INTRODUCTORY PROBLEM SOLVING">GET 1001 - INTRODUCTORY PROBLEM SOLVING</option>
-                            <option value="MTH 1101 - CALCULUS A">MTH 1101 - CALCULUS A</option>
-                            <option value="CSE 1002 - DISCRETE MATHEMATICS">CSE 1002 - DISCRETE MATHEMATICS</option>
-                            <option value="GEN 1140 - DIGITAL FABRICATION TECHNIQUES">GEN 1140 - DIGITAL FABRICATION TECHNIQUES</option>
-                        </select>
-                    </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1">Subject</label>
+                    <select id="task-subject" required class="w-full px-3 py-2 border rounded-lg text-sm dark:bg-slate-700 dark:border-slate-600 dark:text-white">
+                        <option value="HSS 1972 - UNIVERSAL HUMAN VALUES">HSS 1972 - UNIVERSAL HUMAN VALUES</option>
+                        <option value="CSE 1001 - INTRODUCTION TO COMPUTER PROGRAMMING">CSE 1001 - INTRODUCTION TO COMPUTER PROGRAMMING</option>
+                        <option value="PHY 1001 - UNIVERSITY PHYSICS: MECHANICS">PHY 1001 - UNIVERSITY PHYSICS: MECHANICS</option>
+                        <option value="GET 1001 - INTRODUCTORY PROBLEM SOLVING">GET 1001 - INTRODUCTORY PROBLEM SOLVING</option>
+                        <option value="MTH 1101 - CALCULUS A">MTH 1101 - CALCULUS A</option>
+                        <option value="CSE 1002 - DISCRETE MATHEMATICS">CSE 1002 - DISCRETE MATHEMATICS</option>
+                        <option value="GEN 1140 - DIGITAL FABRICATION TECHNIQUES">GEN 1140 - DIGITAL FABRICATION TECHNIQUES</option>
+                    </select>
                 </div>
                 <div class="grid grid-cols-2 gap-2">
                     <div>
@@ -181,6 +180,7 @@
         </div>
     </div>
 
+    <!-- ADD NOTICE MODAL -->
     <div id="add-notice-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
         <div class="bg-white dark:bg-slate-800 rounded-2xl max-w-md w-full p-6 shadow-2xl border border-slate-200 dark:border-slate-700">
             <div class="flex justify-between items-center mb-4">
@@ -197,6 +197,7 @@
         </div>
     </div>
 
+    <!-- AUTHENTICATION MODAL -->
     <div id="auth-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
         <div class="bg-white dark:bg-slate-800 rounded-2xl max-w-md w-full p-6 shadow-2xl border border-slate-200 dark:border-slate-700">
             <div class="flex justify-between items-center mb-4">
@@ -253,6 +254,7 @@
         </div>
     </div>
 
+    <!-- SERIAL LINKING MODAL FOR GOOGLE & PHONE LOGIN -->
     <div id="serial-link-modal" class="fixed inset-0 bg-slate-900/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
         <div class="bg-white dark:bg-slate-800 rounded-2xl max-w-md w-full p-6 shadow-2xl border border-slate-200 dark:border-slate-700 text-center">
             <h3 class="text-lg font-bold text-slate-900 dark:text-white mb-2">Verify Student Identity</h3>
@@ -265,6 +267,7 @@
         </div>
     </div>
 
+    <!-- SCRIPT LOGIC -->
     <script>
         const firebaseConfig = {
             apiKey: "AIzaSyAdwRD23SXtRr3b4cAADMM2lySwn4el_Hk",
@@ -280,7 +283,7 @@
         const auth = firebase.auth();
         let confirmationResultObj = null;
 
-        const CR_SERIAL_NUMBERS = ["26E114B32", "26E100A11"];
+        const CR_SERIAL_NUMBERS = ["26E114B32", "26E100A11", "26E100A14"];
 
         const MASTER_STUDENT_ROSTER = [
             { serialNo: "26E100A11", name: "ALKA" }, { serialNo: "26E100A12", name: "ADRITA" },
