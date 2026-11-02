@@ -416,15 +416,36 @@
                 }
             }
         }
+
+        async function deleteNotice(noticeId) {
+            const isAuthorizedCR = currentUser && CR_SERIAL_NUMBERS.map(s => s.toUpperCase()).includes(currentUser.serialNo.toUpperCase());
+            if (!isCRMode || !isAuthorizedCR) {
+                alert("Access Denied: Only authorized Class Representatives can delete notices.");
+                return;
+            }
+
+            if (confirm("Are you sure you want to delete this notice?")) {
+                try {
+                    await db.collection("notices").doc(noticeId).delete();
+                } catch (error) {
+                    alert("Failed to delete notice: " + error.message);
+                }
+            }
+        }
         // PUBLISH NOTICE TO FIRESTORE
         async function handleAddNoticeSubmit(e) {
             e.preventDefault();
+            const isAuthorizedCR = currentUser && CR_SERIAL_NUMBERS.map(s => s.toUpperCase()).includes(currentUser.serialNo.toUpperCase());
+            if (!isCRMode || !isAuthorizedCR) {
+                alert("Access Denied: Only authorized Class Representatives can post notices.");
+                return;
+            }
+
             const text = document.getElementById('notice-text').value;
 
             try {
                 await db.collection("notices").add({
                     text,
-                    date: "Just now",
                     createdAt: firebase.firestore.FieldValue.serverTimestamp()
                 });
                 closeAddNoticeModal();
@@ -647,6 +668,7 @@
                 document.getElementById('btn-add-notice').classList.add('hidden');
             }
             renderTasks();
+            renderNotices();
         }
 
         function switchAuthTab(tab) {
@@ -721,18 +743,36 @@
         }
 
         function renderNotices() {
-            const container = document.getElementById('notice-list');
-            if (notices.length === 0) {
-                container.innerHTML = `<div class="text-xs text-slate-400 text-center py-4">No notices posted.</div>`;
-                return;
-            }
-            container.innerHTML = notices.map(n => `
-                <div class="p-3 bg-slate-50 dark:bg-slate-700/50 rounded-lg text-xs border border-slate-100 dark:border-slate-700">
-                    <p class="text-slate-800 dark:text-slate-200">${n.text}</p>
-                    <span class="text-[10px] text-slate-400 mt-1 block">${n.date}</span>
-                </div>
-            `).join('');
+    const container = document.getElementById('notice-list');
+    if (notices.length === 0) {
+        container.innerHTML = `<div class="text-xs text-slate-400 text-center py-4">No notices posted.</div>`;
+        return;
+    }
+    container.innerHTML = notices.map(n => {
+        let timeString = n.date || "Just now";
+        if (n.createdAt && n.createdAt.toDate) {
+            const seconds = Math.floor((new Date() - n.createdAt.toDate()) / 1000);
+            if (seconds < 60) timeString = "Just now";
+            else if (seconds < 3600) timeString = Math.floor(seconds / 60) + "m ago";
+            else if (seconds < 86400) timeString = Math.floor(seconds / 3600) + "h ago";
+            else timeString = Math.floor(seconds / 86400) + "d ago";
         }
+
+        return `
+            <div class="p-3 bg-slate-50 dark:bg-slate-700/50 rounded-lg text-xs border border-slate-100 dark:border-slate-700 flex justify-between items-start">
+                <div>
+                    <p class="text-slate-800 dark:text-slate-200">${n.text}</p>
+                    <span class="text-[10px] text-slate-400 mt-1 block">${timeString}</span>
+                </div>
+                ${isCRMode ? `
+                    <button onclick="deleteNotice('${n.id}')" class="text-slate-400 hover:text-red-500 p-1 transition ml-2" title="Delete Notice">
+                        <i class="fa-solid fa-trash-can text-xs"></i>
+                    /button>
+                ` : ''}
+            </div>
+        `;
+    }).join('');
+}
 
         function updateStats() {
             document.getElementById('stat-total').innerText = tasks.length;
